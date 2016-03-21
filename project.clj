@@ -7,7 +7,8 @@
   :min-lein-version "2.5.3"
 
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/clojurescript "1.8.34"]
+                 [org.clojure/clojurescript "1.7.228"]
+                 [binaryage/devtools "0.5.2"]
                  [reagent "0.6.0-alpha"]
                  [org.omcljs/om "1.0.0-alpha31"]
                  [cljs-ajax "0.5.3"]
