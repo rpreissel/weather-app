@@ -3,13 +3,14 @@
             [om.dom :as dom]
             [goog.dom :as gdom]
             [devtools.core :as devtools]
-            [reagent.core :as reagent]
             [om-example-app.corecomponents :as cc]
-            [om-example-app.password :as pw]
             [om-example-app.weather :as we]
-            [om-example-app.chart :as ch]))
+            [goog.string :as gstring]
+            [goog.string.format :as gformat]
+            [ajax.core :refer [GET]]))
 
 (enable-console-print!)
+
 
 ; this enables additional features, :custom-formatters is enabled by default
 (devtools/enable-feature! :sanity-hints :dirac)
@@ -23,6 +24,7 @@
 
 (defmethod read :default
   [{:keys [state]} key _]
+  (println "def")
   (let [st @state]
     (if-let [[_ v] (find st key)]
       {:value v}
@@ -40,6 +42,32 @@
     {:value (parser (dissoc env :query)
                     (get query current-route))}))
 
+(defmethod read :new-city
+  [{:keys [state]} _ _]
+  (let [{:keys [new-city] :as weather} (get-in @state [:weather :default])]
+    {:value new-city}))
+
+
+(defmethod read :weather
+  [{:keys [state ast]} _ {:keys [city] :as params}]
+  (let [{:keys [fetch-city data] :as weather} (get-in @state [:weather :default])]
+    (if (= fetch-city city)
+      {:value weather}
+      {:openweather ast})))
+
+(defmethod mutate 'weather/set-new-city
+  [{:keys [state]} _ {:keys [city]}]
+  {:action #(swap! state assoc-in [:weather :default :new-city] city)})
+
+(defmethod mutate 'weather/load-new-city
+  [{:keys [state]} _ _]
+  (let [{:keys [new-city] :as current-weather} (get-in @state [:weather :default])
+        new-weather (assoc current-weather :city new-city
+                                           :new-city nil
+                                           :data nil)]
+    {:action #(swap! state assoc-in [:weather :default] new-weather)}))
+
+
 (defmethod mutate 'navigation/set-current-route
   [{:keys [state]} _ {:keys [route]}]
   {:value  {:keys [:current-route]}
@@ -53,17 +81,9 @@
   (render [this]
     (dom/div nil "HomePage")))
 
-(defui Weather
-  static om/IQuery
-  (query [this]
-    [:page/weather])
-  Object
-  (render [this]
-    (dom/div nil "Weather")))
-
 (def route->component
   {:index   HomePage
-   :weather Weather})
+   :weather we/Weather})
 
 (def route->title
   [:index "View1"
@@ -93,23 +113,43 @@
                (cc/navigation-bar {:views         route->title
                                    :current-route current-route
                                    :on-click      #(om/transact! this `[(navigation/set-current-route {:route ~%})])})
-               (view-factory route-props)))))
+               (dom/div #js {:className "ApplicationView"}
+                        (view-factory route-props))))))
 
 
 
-(defonce app-state (atom {:current-route :index}))
+(defonce app-state (atom {:current-route      :index
+                          :weather {:default {:data {} :new-city ""}}}))
+
+(def api-key "444112d540b141913a9c1ee6d7f495fa")
+
+(defn fetch-weather [{:keys [openweather]} cb]
+  (println "fetch: " openweather)
+  (let [{[ast] :children} (om/query->ast openweather)
+        city (get-in ast [:params :city])]
+    (GET (gstring/format "http://api.openweathermap.org/data/2.5/weather?q=%s,de&appid=%s&units=metric" city api-key)
+         {:handler         #(do
+                             (println "Success: " %)
+                             (cb {[:weather :default] {:data % :fetch-city city}}))
+          :error-handler   #(do
+                             (println "Error: " %)
+                             (cb {[:weather :default] {:error (:status-text %)}}))
+          :response-format :json
+          :keywords?       true})))
 
 (def reconciler
   (om/reconciler
-    {:state  app-state
-     :parser (om/parser {:read read :mutate mutate})
+    {:state   app-state
+     :parser  (om/parser {:read read :mutate mutate})
+     :remotes [:openweather]
+     :send    fetch-weather
      }))
 
 
 
 
 (om/add-root! reconciler
-              Application (gdom/getElement "app"))
+              we/Weather (gdom/getElement "app"))
 
 
 

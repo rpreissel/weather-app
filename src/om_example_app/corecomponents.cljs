@@ -12,7 +12,17 @@
    (for [{:keys [label checked]} checks]
      ^{:key label} [check-label label checked])])
 
-(defn button [label & {:keys [enabled on-click] :or {enabled true}}]
+(defui Button
+  Object
+  (render [this]
+    (let [{:keys [label enabled on-click] :or {:enabled true}} (om/props this)]
+      (dom/button #js {:disabled (not enabled)
+                      :onClick (when enabled on-click)} label))))
+
+(def button (om/factory Button))
+
+
+#_(defn button [label & {:keys [enabled on-click] :or {enabled true}}]
   [:button {:disabled (not enabled) :on-click (when enabled on-click)} label])
 
 (defn button-bar [& children]
