@@ -24,21 +24,16 @@
     [button button-title :on-click on-click]]])
 
 (defui NavigationBar
-  static om/Ident
-  (ident [this _]
-    [:navigation 0])
-  static om/IQuery
-  (query [this] [:views :current-view])
   Object
   (render [this]
-    (let [{:keys [views current-view]} (om/props this)
-          view-pairs (keep-indexed #(when (even? %1) [(quot %1 2) %2]) views)]
+    (let [{:keys [views current-route on-click]} (om/props this)
+          view-pairs (partition 2 views)]
       (apply dom/ul #js {:className "NavigationBar"}
-             (for [[index label] view-pairs]
-               (dom/li #js {:className (if (= index current-view)
+             (for [[route label] view-pairs]
+               (dom/li #js {:className (if (= route current-route)
                                          "NavigationBar-Item NavigationBar-Item-Active"
                                          "NavigationBar-Item")
-                            :onClick #(om/transact! this `[(navigation/set-current-view {:view ~index})])} label))))))
+                            :onClick #(on-click route)} label))))))
 
 
 (def navigation-bar (om/factory NavigationBar))

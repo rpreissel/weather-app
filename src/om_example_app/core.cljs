@@ -16,9 +16,7 @@
 (devtools/install!)
 
 
-(defonce app-state (atom {:navigation {:views ["View1" #(dom/div nil "Hello1")
-                                               "View2" #(dom/div nil "Hello2")]
-                                       :current-view 0}}))
+;;routing comes from https://github.com/jdubie/om-next-router-example
 
 (defmulti read om/dispatch)
 (defmulti mutate om/dispatch)
@@ -30,10 +28,76 @@
       {:value v}
       {:value :not-found})))
 
-(defmethod mutate 'navigation/set-current-view
-  [{:keys [state] :as env} _ {:keys [view]}]
-    {:value {:keys [:navigation :current-view]}
-     :action #(swap! state assoc-in [:navigation :current-view] view)})
+
+(defmethod read :current-route
+  [{:keys [state]} _ _]
+  {:value (get @state :current-route)})
+
+(defmethod read :route-props
+  [{:keys [state query parser] :as env} _ _]
+  (let [{:keys [current-route]} @state]
+    "Here `query` is a map from route -> query. So we only use the query for the current route"
+    {:value (parser (dissoc env :query)
+                    (get query current-route))}))
+
+(defmethod mutate 'navigation/set-current-route
+  [{:keys [state]} _ {:keys [route]}]
+  {:value  {:keys [:current-route]}
+   :action #(swap! state assoc :current-route route)})
+
+(defui HomePage
+  static om/IQuery
+  (query [this]
+    [:page/home])
+  Object
+  (render [this]
+    (dom/div nil "HomePage")))
+
+(defui Weather
+  static om/IQuery
+  (query [this]
+    [:page/weather])
+  Object
+  (render [this]
+    (dom/div nil "Weather")))
+
+(def route->component
+  {:index   HomePage
+   :weather Weather})
+
+(def route->title
+  [:index "View1"
+   :weather "View2"])
+
+(def route->factory
+  (zipmap (keys route->component)
+          (map om/factory (vals route->component))))
+
+(def route->query
+  (zipmap (keys route->component)
+          (map om/get-query (vals route->component))))
+
+
+
+(defui Application
+  static om/IQuery
+  (query [_]
+    "This is called the \"Total Query\" approach because `route->query` is the complete
+    query of the app."
+    [:current-route {:route-props route->query}])
+  Object
+  (render [this]
+    (let [{:keys [current-route route-props]} (om/props this)
+          view-factory (route->factory current-route)]
+      (dom/div nil
+               (cc/navigation-bar {:views         route->title
+                                   :current-route current-route
+                                   :on-click      #(om/transact! this `[(navigation/set-current-route {:route ~%})])})
+               (view-factory route-props)))))
+
+
+
+(defonce app-state (atom {:current-route :index}))
 
 (def reconciler
   (om/reconciler
@@ -42,32 +106,7 @@
      }))
 
 
-(comment (def views
-           ["Password Form" [pw/password-view]
-            "Weather Report" [we/weather-view]
-            "Chart Example" ^{:class "ApplicationView-chartView"} [ch/chart-view]])
 
-
-         (defn application []
-           (let [current-view (reagent/atom (views 1))]
-             (fn []
-               (let [view @current-view
-                     application-view-class-names (str "ApplicationView " (-> view meta :class))]
-                 [:div
-                  [cc/navigation-bar views view #(reset! current-view %)]
-                  [:div {:class application-view-class-names} view]]))))
-
-
-         (reagent/render-component [application]
-                                   (. js/document (getElementById "app")))
-         )
-
-(defui Application
-  static om/IQuery
-  (query [this] [{:navigation (om/get-query cc/NavigationBar)}])
-  Object
-  (render [this]
-    (dom/div nil (cc/navigation-bar (:navigation (om/props this))))))
 
 (om/add-root! reconciler
               Application (gdom/getElement "app"))
