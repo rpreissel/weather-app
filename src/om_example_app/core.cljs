@@ -13,4 +13,4 @@
   (weo/add-root! "app"))
 
 (defn ^export run-weather-reframe []
-  (wer/add-root! "app"))
+  (wer/render-component "app"))

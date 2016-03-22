@@ -6,8 +6,6 @@
             [goog.dom :as gdom]
             [ajax.core :refer [GET]]))
 
-(defmulti read om/dispatch)
-(defmulti mutate om/dispatch)
 
 (defui WeatherPanel
   Object
@@ -58,6 +56,9 @@
 (defonce app-state (atom {:new-city nil
                           :weather  {}}))
 
+(defmulti read om/dispatch)
+(defmulti mutate om/dispatch)
+
 (defmethod read :new-city
   [{:keys [state]} _ _]
   (let [new-city (:new-city @state)]
@@ -74,7 +75,6 @@
     (if (= fetched-city city)
       {:value weather}
       {:fetchweather ast})))
-
 
 (def api-key "444112d540b141913a9c1ee6d7f495fa")
 (defn fetch-weather [{:keys [fetchweather]} cb]
@@ -96,10 +96,8 @@
     {:state   app-state
      :parser  (om/parser {:read read :mutate mutate})
      :remotes [:fetchweather]
-     :send    fetch-weather
-     }))
+     :send    fetch-weather}))
 
 (defn add-root! [elem]
   (om/add-root! reconciler
                 WeatherView (gdom/getElement elem)))
-

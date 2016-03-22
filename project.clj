@@ -11,6 +11,7 @@
                  [binaryage/devtools "0.5.2"]
                  [reagent "0.6.0-alpha"]
                  [org.omcljs/om "1.0.0-alpha31"]
+                 [re-frame "0.7.0-alpha-3"]
                  [cljs-ajax "0.5.3"]
                  [cljsjs/d3 "3.5.7-1"]]
 
