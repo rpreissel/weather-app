@@ -42,15 +42,9 @@
     {:value (parser (dissoc env :query)
                     (get query current-route))}))
 
-(defmethod read :new-city
-  [{:keys [state]} _ _]
-  (let [{:keys [new-city] :as weather} (get-in @state [:weather :default])]
-    {:value new-city}))
-
-
 (defmethod read :weather
-  [{:keys [state ast]} _ {:keys [city] :as params}]
-  (let [{:keys [fetch-city data] :as weather} (get-in @state [:weather :default])]
+  [{:keys [state ast]} _ {:keys [city]}]
+  (let [{:keys [fetch-city] :as weather} (get-in @state [:weather :default])]
     (if (= fetch-city city)
       {:value weather}
       {:openweather ast})))
@@ -63,8 +57,8 @@
   [{:keys [state]} _ _]
   (let [{:keys [new-city] :as current-weather} (get-in @state [:weather :default])
         new-weather (assoc current-weather :city new-city
-                                           :new-city nil
-                                           :data nil)]
+                                           :new-city ""
+                                           :data {})]
     {:action #(swap! state assoc-in [:weather :default] new-weather)}))
 
 
@@ -150,6 +144,3 @@
 
 (om/add-root! reconciler
               we/Weather (gdom/getElement "app"))
-
-
-
