@@ -1,18 +1,10 @@
 (ns om-example-app.weather
   (:require [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
-            [devtools.core :as devtools]
             [goog.string :as gstring]
             [goog.string.format :as gformat]
             [goog.dom :as gdom]
             [ajax.core :refer [GET]]))
-
-(enable-console-print!)
-
-; this enables additional features, :custom-formatters is enabled by default
-(devtools/enable-feature! :sanity-hints :dirac)
-(devtools/install!)
-
 
 (defmulti read om/dispatch)
 (defmulti mutate om/dispatch)
@@ -37,11 +29,11 @@
     {:city "Hamburg"})
   static om/IQuery
   (query [_]
-    ['(:weather {:city ?city})])
+    '[:new-city (:weather {:city ?city})])
   Object
   (render [this]
-    (let [{{:keys [new-city data error]} :weather} (om/props this)
-          city (-> this om/get-params :city)]
+    (println "render weather")
+    (let [{new-city :new-city {:keys [data error]} :weather} (om/props this)]
       (println "Data: " data)
       (println "Error: " error)
       (dom/div #js {:className "ApplicationView"}
@@ -56,32 +48,36 @@
                            "Load")
                (when data (weather-panel data))))))
 
-(defonce app-state (atom {:weather
-                          {:default
-                           {:data     {}
-                            :new-city ""}}}))
+(defonce app-state (atom {:new-city ""
+                          :weather {}}))
 
-(defmethod read :weather
-  [{:keys [state ast]} _ {:keys [city]}]
-  (let [{:keys [fetch-city] :as weather} (get-in @state [:weather :default])]
-    (if (= fetch-city city)
-      {:value weather}
-      {:openweather ast})))
+(defmethod read :new-city
+  [{:keys [state]} _ _]
+  (let [new-city (:new-city @state)]
+    {:value new-city}))
+
 
 (defmethod mutate 'weather/set-new-city
   [{:keys [state]} _ {:keys [city]}]
-  {:action #(swap! state assoc-in [:weather :default :new-city] city)})
+  {:action #(swap! state assoc :new-city city)})
+
+(defmethod read :weather
+  [{:keys [state ast]} _ {:keys [city]}]
+  (let [{:keys [fetched-city] :as weather} (get-in @state [:weather :default])]
+    (if (= fetched-city city)
+      {:value weather}
+      {:fetchweather ast})))
 
 
 (def api-key "444112d540b141913a9c1ee6d7f495fa")
-(defn fetch-weather [{:keys [openweather]} cb]
-  (println "fetch: " openweather)
-  (let [{[ast] :children} (om/query->ast openweather)
+(defn fetch-weather [{:keys [fetchweather]} cb]
+  (println "fetch: " fetchweather)
+  (let [{[ast] :children} (om/query->ast fetchweather)
         city (get-in ast [:params :city])]
     (GET (gstring/format "http://api.openweathermap.org/data/2.5/weather?q=%s,de&appid=%s&units=metric" city api-key)
          {:handler         #(do
                              (println "Success: " %)
-                             (cb {[:weather :default] {:data % :fetch-city city}}))
+                             (cb {[:weather :default] {:data % :fetched-city city}}))
           :error-handler   #(do
                              (println "Error: " %)
                              (cb {[:weather :default] {:error (:status-text %)}}))
@@ -92,9 +88,11 @@
   (om/reconciler
     {:state   app-state
      :parser  (om/parser {:read read :mutate mutate})
-     :remotes [:openweather]
+     :remotes [:fetchweather]
      :send    fetch-weather
      }))
 
-(om/add-root! reconciler
-              Weather (gdom/getElement "app"))
+(defn add-root! [elem]
+  (om/add-root! reconciler
+                Weather (gdom/getElement elem)))
+

@@ -32,7 +32,7 @@
                 ;; If no code is to be run, set :figwheel true for continued automagical reloading
                 :figwheel true
 
-                :compiler {:main om-example-app.weather
+                :compiler {:main om-example-app.core
                            :asset-path "js/compiled/out"
                            :output-to "resources/public/js/compiled/om_example_app.js"
                            :output-dir "resources/public/js/compiled/out"
@@ -43,7 +43,7 @@
                {:id "min"
                 :source-paths ["src"]
                 :compiler {:output-to "resources/public/js/compiled/om_example_app.js"
-                           :main om-example-app.weather
+                           :main om-example-app.core
                            :optimizations :advanced
                            :pretty-print false}}]}
 
