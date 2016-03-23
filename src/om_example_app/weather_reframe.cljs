@@ -11,7 +11,8 @@
             [goog.dom :as gdom]
             [ajax.core :refer [GET]]))
 
-
+(declare set-city)
+(declare fetch-weather)
 
 (defn weather-panel [weather]
   (println "render weather panel")
@@ -34,12 +35,21 @@
         [:div.ApplicationView
          [:h1 "Current Weather"]
          [:input {:type      "text" :focus true :value @city
-                  :on-change #(dispatch [:set-city (-> % .-target .-value)])}]
-         [:button {:on-click #(dispatch [:load-weather])
+                  :on-change #(set-city (-> % .-target .-value))}]
+         [:button {:on-click #(fetch-weather @city)
                    :disabled (-> @city count pos? not)} "Load"]
          (when data [weather-panel data])
          (when error [:div.Red (str "Error: " error)])]))))
 
+
+(defn init []
+  (let [city (subscribe [:city])]
+    (when-not @city
+      (dispatch [:init])
+      (fetch-weather @city))))
+
+(defn set-city [city]
+  (dispatch [:set-city city]))
 
 (def api-key "444112d540b141913a9c1ee6d7f495fa")
 (defn fetch-weather [city]
@@ -58,7 +68,6 @@
 (register-handler
   :init
   (fn [_ _]
-    (dispatch [:load-weather])
     {:city    "Hamburg"
      :weather {}}))
 
@@ -74,12 +83,6 @@
         (assoc-in [:weather :data] data)
         (assoc-in [:weather :error] error))))
 
-(register-handler
-  :load-weather
-  (fn [{:keys [city] :as db} _]
-    (fetch-weather city)
-    db))
-
 (register-sub
   :city
   (fn [db]
@@ -93,6 +96,6 @@
       (:weather @db))))
 
 (defn render-component [elem]
-  (dispatch-sync [:init])
+  (init)
   (reagent/render-component [weather-view]
                             (gdom/getElement elem)))
