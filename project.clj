@@ -1,4 +1,4 @@
-(defproject om-example-app "0.1.0-SNAPSHOT"
+(defproject weather-app "0.1.0-SNAPSHOT"
   :description "FIXME: write this!"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
@@ -33,9 +33,9 @@
                 ;; If no code is to be run, set :figwheel true for continued automagical reloading
                 :figwheel true
 
-                :compiler {:main om-example-app.core
+                :compiler {:main weather-app.core
                            :asset-path "js/compiled/out"
-                           :output-to "resources/public/js/compiled/om_example_app.js"
+                           :output-to "resources/public/js/compiled/weather_app.js"
                            :output-dir "resources/public/js/compiled/out"
                            :source-map-timestamp true}}
                ;; This next build is an compressed minified build for
@@ -43,8 +43,8 @@
                ;; lein cljsbuild once min
                {:id "min"
                 :source-paths ["src"]
-                :compiler {:output-to "resources/public/js/compiled/om_example_app.js"
-                           :main om-example-app.core
+                :compiler {:output-to "resources/public/js/compiled/weather_app.js"
+                           :main weather-app.core
                            :optimizations :advanced
                            :pretty-print false}}]}
 

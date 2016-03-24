@@ -1,7 +1,7 @@
-(ns om-example-app.core
+(ns weather-app.core
   (:require [devtools.core :as devtools]
-            [om-example-app.weather-om :as weo]
-            [om-example-app.weather-reframe :as wer]))
+            [weather-app.om :as weo]
+            [weather-app.reframe :as wer]))
 
 (enable-console-print!)
 

@@ -1,4 +1,4 @@
-(ns om-example-app.weather-reframe
+(ns weather-app.reframe
   (:require-macros [reagent.ratom :refer [reaction]])
   (:require [re-frame.core :refer [register-handler
                                    register-sub

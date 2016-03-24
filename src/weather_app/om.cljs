@@ -1,4 +1,4 @@
-(ns om-example-app.weather-om
+(ns weather-app.om
   (:require [om.next :as om :refer-macros [defui]]
             [om.dom :as dom]
             [goog.string :as gstring]
