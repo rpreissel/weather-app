@@ -14,6 +14,14 @@
 (declare set-city)
 (declare fetch-weather)
 
+(defn city-input-panel [city]
+  [:div
+   [:h1 "Current Weather"]
+   [:input {:type      "text" :focus true :value city
+            :on-change #(set-city (-> % .-target .-value))}]
+   [:button {:on-click #(fetch-weather city)
+             :disabled (-> city count pos? not)} "Load"]])
+
 (defn weather-panel [weather]
   (println "render weather panel")
   (if-not weather
@@ -33,11 +41,7 @@
       (println "render weather view")
       (let [{:keys [data error]} @weather]
         [:div.ApplicationView
-         [:h1 "Current Weather"]
-         [:input {:type      "text" :focus true :value @city
-                  :on-change #(set-city (-> % .-target .-value))}]
-         [:button {:on-click #(fetch-weather @city)
-                   :disabled (-> @city count pos? not)} "Load"]
+         [city-input-panel @city]
          (when data [weather-panel data])
          (when error [:div.Red (str "Error: " error)])]))))
 
@@ -45,7 +49,7 @@
 (defn init []
   (let [city (subscribe [:city])]
     (when-not @city
-      (dispatch [:init])
+      (dispatch-sync [:init])
       (fetch-weather @city))))
 
 (defn set-city [city]
