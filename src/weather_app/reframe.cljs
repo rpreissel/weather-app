@@ -11,15 +11,14 @@
             [goog.dom :as gdom]
             [ajax.core :refer [GET]]))
 
-(declare set-city)
-(declare fetch-weather)
-
 (defn city-input-panel [city]
   [:div
    [:h1 "Current Weather"]
-   [:input {:type      "text" :focus true :value city
-            :on-change #(set-city (-> % .-target .-value))}]
-   [:button {:on-click #(fetch-weather city)
+   [:input {:type      "text"
+            :focus     true
+            :value     city
+            :on-change #(dispatch [:set-city (-> % .-target .-value)])}]
+   [:button {:on-click #(dispatch [:fetch-weather city])
              :disabled (-> city count pos? not)} "Load"]])
 
 (defn weather-panel [weather]
@@ -50,24 +49,7 @@
   (let [city (subscribe [:city])]
     (when-not @city
       (dispatch-sync [:init])
-      (fetch-weather @city))))
-
-(defn set-city [city]
-  (dispatch [:set-city city]))
-
-(def api-key "444112d540b141913a9c1ee6d7f495fa")
-(defn fetch-weather [city]
-  (println "fetch: " city)
-  (GET (gstring/format "http://api.openweathermap.org/data/2.5/weather?q=%s,de&appid=%s&units=metric" city api-key)
-       {:handler         #(do
-                           (println "Success: " %)
-                           (dispatch [:set-weather % nil]))
-        :error-handler   #(do
-                           (println "Error: " %)
-                           (dispatch [:set-weather nil (:status-text %)]))
-        :response-format :json
-        :keywords?       true}))
-
+      (dispatch-sync [:fetch-weather @city]))))
 
 (register-handler
   :init
@@ -80,9 +62,28 @@
   (fn [db [_ city]]
     (assoc db :city city)))
 
+(def api-key "444112d540b141913a9c1ee6d7f495fa")
+
+(register-handler
+  :fetch-weather
+  (fn [db [_ city]]
+    (println "fetch: " city)
+    (GET (gstring/format "http://api.openweathermap.org/data/2.5/weather?q=%s,de&appid=%s&units=metric" city api-key)
+         {:handler         #(do
+                             (println "Success: " %)
+                             (dispatch [:set-weather % nil]))
+          :error-handler   #(do
+                             (println "Error: " %)
+                             (dispatch [:set-weather nil (:status-text %)]))
+          :response-format :json
+          :keywords?       true})
+    db))
+
+
 (register-handler
   :set-weather
   (fn [db [_ data error]]
+    (println db)
     (-> db
         (assoc-in [:weather :data] data)
         (assoc-in [:weather :error] error))))
