@@ -5,11 +5,11 @@ different Clojurescript frameworks.
  
 [![Sample Application](screenshot.png)](http://rpreissel.github.io/weather-app/index.html)
 
-## Dev Build with figwheel
+## Dev Build with Figwheel
 
     lein figwheel
 
-## Prod build
+## Prod Build with Minimization
 
     lein clean
     lein cljsbuild once min
