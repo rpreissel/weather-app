@@ -27,19 +27,19 @@
 
 (def city-input-panel (om/factory CityInputPanel))
 
-  (defui WeatherPanel
-    Object
-    (render [this]
-      (println "render weather panel")
-      (let [{:keys [weather]} (om/props this)]
-        (if-not weather
-          (dom/h1 nil "No weather data available")
-          (let [current-weather (get-in weather [:weather 0])]
-            (dom/div nil
-                     (dom/h1 nil (str "Weather in " (:name weather)))
-                     (dom/h2 nil (str (get-in weather [:main :temp]) " °C")
-                             (dom/img #js {:src (str "http://openweathermap.org/img/w/" (:icon current-weather) ".png")}))
-                     (dom/p nil (:description current-weather))))))))
+(defui WeatherPanel
+  Object
+  (render [this]
+    (println "render weather panel")
+    (let [{:keys [weather]} (om/props this)]
+      (if-not weather
+        (dom/h1 nil "No weather data available")
+        (let [current-weather (get-in weather [:weather 0])]
+          (dom/div nil
+                   (dom/h1 nil (str "Weather in " (:name weather)))
+                   (dom/h2 nil (str (get-in weather [:main :temp]) " °C")
+                           (dom/img #js {:src (str "http://openweathermap.org/img/w/" (:icon current-weather) ".png")}))
+                   (dom/p nil (:description current-weather))))))))
 
 (def weather-panel (om/factory WeatherPanel))
 
