@@ -9,8 +9,8 @@
 (devtools/enable-feature! :sanity-hints :dirac)
 (devtools/install!)
 
-(defn ^export run-weather-om []
+(defn ^:export run-weather-om []
   (weo/add-root! "app"))
 
-(defn ^export run-weather-reframe []
+(defn ^:export run-weather-reframe []
   (wer/render-component "app"))
